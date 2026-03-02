@@ -1,0 +1,9 @@
+services:
+  traffic-light:
+    build: .
+    container_name: traffic-light-simulator
+    ports:
+      - "8500:8500"
+    restart: unless-stopped
+    environment:
+      - BACNET_DEVICE_ID=3001
