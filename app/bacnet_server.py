@@ -44,6 +44,7 @@ async def run_bacnet_server():
     # Wait for BAC0 to fully initialize before registering objects
     # Without this delay, YABE cannot read the object list
     await asyncio.sleep(2)
+    from bacpypes3.local.cov import COVIncrementCriteria
 
     binary_value(
         name="red_light",
@@ -80,6 +81,13 @@ async def run_bacnet_server():
         presentValue="active",
         bacnet_properties={"objectIdentifier": ("binaryValue", 4)},
     ).add_objects_to_application(bacnet)
+    # Explicitly enable COV on all binary value objects
+    for obj_name in ["red_light", "yellow_light", "green_light", "running"]:
+        obj = bacnet.this_application.app.get_object_name(obj_name)
+        if obj:
+            obj._object_supports_cov = True
+            print(f"COV enabled on {obj_name}")
+    
 
     print(f"BACnet device online. Device ID: {device_id}")
     await sync_loop(bacnet)
