@@ -49,6 +49,7 @@ async def run_bacnet_server():
         name="red_light",
         instance=1,
         description="Red Light Active",
+        is_commandable=True,
         presentValue="inactive",
         bacnet_properties={"objectIdentifier": ("binaryValue", 1)},
     ).add_objects_to_application(bacnet)
@@ -57,6 +58,7 @@ async def run_bacnet_server():
         name="yellow_light",
         instance=2,
         description="Yellow Light Active",
+        is_commandable=True,
         presentValue="inactive",
         bacnet_properties={"objectIdentifier": ("binaryValue", 2)},
     ).add_objects_to_application(bacnet)
@@ -65,6 +67,7 @@ async def run_bacnet_server():
         name="green_light",
         instance=3,
         description="Green Light Active",
+        is_commandable=True,
         presentValue="inactive",
         bacnet_properties={"objectIdentifier": ("binaryValue", 3)},
     ).add_objects_to_application(bacnet)
@@ -73,6 +76,7 @@ async def run_bacnet_server():
         name="running",
         instance=4,
         description="Simulator Running",
+        is_commandable=True,
         presentValue="active",
         bacnet_properties={"objectIdentifier": ("binaryValue", 4)},
     ).add_objects_to_application(bacnet)
