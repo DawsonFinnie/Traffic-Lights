@@ -44,7 +44,7 @@ async def run_bacnet_server():
     # Wait for BAC0 to fully initialize before registering objects
     # Without this delay, YABE cannot read the object list
     await asyncio.sleep(2)
-    from bacpypes3.local.cov import COVObjectCriteria
+    from bacpypes3.local.cov import GenericCriteria
 
     binary_value(
         name="red_light",
@@ -86,8 +86,8 @@ async def run_bacnet_server():
     for obj_name in ["red_light", "yellow_light", "green_light", "running"]:
         obj = bacnet.this_application.app.get_object_name(obj_name)
         if obj:
+            obj._cov_criteria = GenericCriteria
             obj._object_supports_cov = True
-            obj._cov_criteria = COVObjectCriteria
             print(f"COV enabled on {obj_name}")
     
 
