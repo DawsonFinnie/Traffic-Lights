@@ -1,55 +1,88 @@
 /// app/static/js/traffic.js
+// =============================================================================
+// FRONTEND JAVASCRIPT - Runs in the browser, not on the server.
+// Responsible for:
+//   1. Polling the Flask /status endpoint every 500ms
+//   2. Updating the traffic light bulb display based on the response
+//   3. Handling the Start/Stop button click
+//
+// This file is served as a static file by Flask and loaded by index.html
+// =============================================================================
 
+// --- GET REFERENCES TO HTML ELEMENTS ---
+// These grab the actual DOM elements from index.html so we can update them
 const bulbs = {
-    red: document.getElementById("bulb-red"),
-    yellow: document.getElementById("bulb-yellow"),
-    green: document.getElementById("bulb-green"),
+    red:    document.getElementById("bulb-red"),     // The red circle div
+    yellow: document.getElementById("bulb-yellow"),  // The yellow circle div
+    green:  document.getElementById("bulb-green"),   // The green circle div
 };
+const statusLabel = document.getElementById("status-label");  // The text below the light
+const toggleBtn   = document.getElementById("toggle-btn");    // The Start/Stop button
 
-const statusLabel = document.getElementById("status-label");
-const toggleBtn = document.getElementById("toggle-btn");
 
-// Update the light display and button based on what the server returns
+// --- UPDATE DISPLAY ---
+// Called every time we get a response from /status
+// Takes the current light state ("red"/"yellow"/"green") and running (true/false)
 function updateLight(state, running) {
-    bulbs.red.className = "bulb";
-    bulbs.yellow.className = "bulb";
-    bulbs.green.className = "bulb";
 
+    // First reset all bulbs to their dim/off state by setting just the base class
+    bulbs.red.className    = "bulb";
+    bulbs.yellow.className = "bulb";
+    bulbs.green.className  = "bulb";
+
+    // If running and the state matches a known bulb, light it up
+    // Adding "red-on", "yellow-on", or "green-on" class triggers the CSS glow effect
     if (running && bulbs[state]) {
         bulbs[state].className = `bulb ${state}-on`;
     }
 
+    // Update the status text below the light housing
     statusLabel.textContent = running ? state.toUpperCase() : "STOPPED";
-    statusLabel.style.color = !running ? "#888"
-                            : state === "red" ? "#ff2200"
-                            : state === "yellow" ? "#ffcc00"
-                            : "#00cc44";
 
-    // Update button appearance
-    toggleBtn.textContent = running ? "Stop" : "Start";
-    toggleBtn.style.background = running ? "#cc0000" : "#007700";
+    // Update the status text color to match the active light
+    statusLabel.style.color = !running        ? "#888"     // grey when stopped
+                            : state === "red"    ? "#ff2200"  // red
+                            : state === "yellow" ? "#ffcc00"  // yellow
+                            :                     "#00cc44";  // green
+
+    // Update the button text and color based on current running state
+    toggleBtn.textContent   = running ? "Stop"    : "Start";
+    toggleBtn.style.background = running ? "#cc0000" : "#007700";  // red button when running, green when stopped
 }
 
-// Poll for current status every 500ms
+
+// --- POLL STATUS ---
+// This function runs every 500ms (set at the bottom with setInterval)
+// It asks the Flask server for the current state and updates the UI
+// Uses async/await so the browser doesn't freeze while waiting for the response
 async function pollStatus() {
     try {
-        const response = await fetch("/status");
-        const data = await response.json();
-        updateLight(data.state, data.running);
+        const response = await fetch("/status");        // HTTP GET request to Flask /status route
+        const data     = await response.json();         // Parse the JSON response: {state, running}
+        updateLight(data.state, data.running);          // Update the UI with the new data
     } catch (error) {
-        statusLabel.textContent = "Connection lost";
-        statusLabel.style.color = "#888";
+        // If the server is unreachable (e.g. container stopped), show connection lost
+        statusLabel.textContent   = "Connection lost";
+        statusLabel.style.color   = "#888";
     }
 }
 
-// Called when button is clicked
+
+// --- TOGGLE BUTTON HANDLER ---
+// Called when the Start/Stop button is clicked
+// Sends a POST request to either /start or /stop depending on current state
 async function toggleTraffic() {
+    // Determine which endpoint to call based on the button's current text
     const endpoint = toggleBtn.textContent === "Stop" ? "/stop" : "/start";
+
+    // Send the POST request to Flask - no body needed, just the URL
     await fetch(endpoint, { method: "POST" });
-    // No need to do anything else — pollStatus will pick up the change
+
+    // No need to manually update the UI here
+    // pollStatus() will pick up the change within 500ms automatically
 }
 
-toggleBtn.addEventListener("click", toggleTraffic);
 
+// --- EVENT LISTENERS AND TIMERS ---
+toggleBtn.addEventListener("click", toggleTraffic);  // Wire up the button click handler
 setInterval(pollStatus, 500);
-pollStatus();
